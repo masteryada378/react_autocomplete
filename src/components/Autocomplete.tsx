@@ -16,7 +16,6 @@ export const Autocomplete: React.FC<Props> = ({
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isDropdownActive, setIsDropdownActive] = useState(false);
 
-  // Debounce логіка
   useEffect(() => {
     if (query.length > 0 && query.trim() === '') {
       return;
@@ -33,7 +32,7 @@ export const Autocomplete: React.FC<Props> = ({
     const { value } = event.target;
 
     setQuery(value);
-    setIsDropdownActive(true); // Гарантуємо, що при введенні тексту (або очищенні) список активний
+    setIsDropdownActive(true);
     onSelected(null);
   };
 
@@ -43,8 +42,6 @@ export const Autocomplete: React.FC<Props> = ({
   };
 
   const handleInputBlur = () => {
-    // Закриваємо лише тоді, коли фокус дійсно пішов,
-    // але без таймаутів, які конфліктують із Cypress .clear()
     setIsDropdownActive(false);
   };
 
@@ -55,7 +52,6 @@ export const Autocomplete: React.FC<Props> = ({
     onSelected(person);
   };
 
-  // Валідація та фільтрація без виклику .filter() на чистих пробілах
   let suggestions: Person[] = [];
 
   if (query.length > 0 && query.trim() === '') {
@@ -101,11 +97,8 @@ export const Autocomplete: React.FC<Props> = ({
                 key={person.slug}
                 className="dropdown-item"
                 data-cy="suggestion-item"
-                // Використовуємо onMouseDown замість onClick.
-                // Воно виконується ДО onBlur інпута, тому вибір спрацює миттєво,
-                // і нам не потрібні штучні таймаути в коді.
                 onMouseDown={e => {
-                  e.preventDefault(); // Запобігає втраті фокусу інпутом завчасно
+                  e.preventDefault();
                   handleSuggestionClick(person);
                 }}
                 role="button"
