@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Person } from '../types/Person';
 
 interface Props {
@@ -15,10 +15,9 @@ export const Autocomplete: React.FC<Props> = ({
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isDropdownActive, setIsDropdownActive] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query.trim() === '' && query.length > 0) {
+    if (query.length > 0 && query.trim() === '') {
       return;
     }
 
@@ -28,21 +27,6 @@ export const Autocomplete: React.FC<Props> = ({
 
     return () => clearTimeout(handler);
   }, [query, delay]);
-
-  useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownActive(false);
-      }
-    };
-
-    document.addEventListener('click', handleDocumentClick);
-
-    return () => document.removeEventListener('click', handleDocumentClick);
-  }, []);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
@@ -55,6 +39,12 @@ export const Autocomplete: React.FC<Props> = ({
     setIsDropdownActive(true);
   };
 
+  const handleInputBlur = () => {
+    setTimeout(() => {
+      setIsDropdownActive(false);
+    }, 200);
+  };
+
   const handleSuggestionClick = (person: Person) => {
     setQuery(person.name);
     setDebouncedQuery(person.name);
@@ -62,21 +52,28 @@ export const Autocomplete: React.FC<Props> = ({
     onSelected(person);
   };
 
-  const normalizedQuery = debouncedQuery.trim().toLowerCase();
-  const suggestions = people.filter(person =>
-    person.name.toLowerCase().includes(normalizedQuery),
-  );
+  let suggestions: Person[] = [];
 
-  const showSuggestions =
-    isDropdownActive && (query.length === 0 || suggestions.length > 0);
+  if (query.length > 0 && query.trim() === '') {
+    suggestions = [];
+  } else {
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
+
+    if (normalizedQuery === '') {
+      suggestions = people;
+    } else {
+      suggestions = people.filter(person =>
+        person.name.toLowerCase().includes(normalizedQuery),
+      );
+    }
+  }
+
+  const showSuggestions = isDropdownActive && suggestions.length > 0;
   const showNoSuggestions =
-    isDropdownActive && query.length > 0 && suggestions.length === 0;
+    isDropdownActive && query.trim().length > 0 && suggestions.length === 0;
 
   return (
-    <div
-      className={`dropdown ${showSuggestions ? 'is-active' : ''}`}
-      ref={dropdownRef}
-    >
+    <div className={`dropdown ${showSuggestions ? 'is-active' : ''}`}>
       <div className="dropdown-trigger">
         <input
           type="text"
@@ -86,6 +83,7 @@ export const Autocomplete: React.FC<Props> = ({
           value={query}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
         />
       </div>
 
@@ -116,8 +114,8 @@ export const Autocomplete: React.FC<Props> = ({
 
       {showNoSuggestions && (
         <div
-          className="notification is-danger is-light
-            mt-3 is-align-self-flex-start"
+          className="notification is-danger
+          is-light mt-3 is-align-self-flex-start"
           role="alert"
           data-cy="no-suggestions-message"
         >
